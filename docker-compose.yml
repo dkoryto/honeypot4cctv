@@ -2,9 +2,13 @@ version: '3.8'
 
 services:
   honeypot:
-    container_name: ${HONEYPOT_NAME}
-    build: .
-    restart: always
+    container_name: ${HONEYPOT_NAME:-honeypot}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    restart: unless-stopped
     ports:
       - "80:80"
       - "22:22"
@@ -12,17 +16,27 @@ services:
       - "554:554"  # RTSP
       - "8080:8080"  # ONVIF
     environment:
-      - HONEYPOT_NAME=${HONEYPOT_NAME}
-      - CAMERA_MODEL=${CAMERA_MODEL}
-      - HONEYPOT_IP=${HONEYPOT_IP}
-      - HONEYPOT_NETMASK=${HONEYPOT_NETMASK}
-      - HONEYPOT_GATEWAY=${HONEYPOT_GATEWAY}
-      - HONEYPOT_MAC=${HONEYPOT_MAC}
-      - HONEYPOT_DHCP=${HONEYPOT_DHCP}
-      - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
-      - WEBHOOK_URL=${WEBHOOK_URL}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - HONEYPOT_NAME=${HONEYPOT_NAME:-honeypot}
+      - CAMERA_MODEL=${CAMERA_MODEL:-hikvision}
+      - HONEYPOT_IP=${HONEYPOT_IP:-0.0.0.0}
+      - HONEYPOT_NETMASK=${HONEYPOT_NETMASK:-255.255.255.0}
+      - HONEYPOT_GATEWAY=${HONEYPOT_GATEWAY:-192.168.1.1}
+      - HONEYPOT_MAC=${HONEYPOT_MAC:-00:00:00:00:00:00}
+      - HONEYPOT_DHCP=${HONEYPOT_DHCP:-false}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
     volumes:
-      - ./honeypot.log:/app/honeypot.log
+      - type: bind
+        source: ./honeypot.log
+        target: /app/honeypot.log
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
     network_mode: "bridge"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

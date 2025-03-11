@@ -5,3 +5,5 @@ Werkzeug
 paramiko
 requests
 pytz
+python-telegram-bot
+python-dotenv

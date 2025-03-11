@@ -1,9 +1,23 @@
-FROM python:3.9
+FROM python:3.9-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
-COPY . /app
+COPY requirements.txt .
 
-RUN apt-get update && apt-get install -y ffmpeg && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Upewnij się, że katalog /app ma odpowiednie uprawnienia
+RUN chown -R nobody:nogroup /app && \
+    chmod -R 755 /app && \
+    touch /app/honeypot.log && \
+    chmod 666 /app/honeypot.log
+
+USER nobody
 
 CMD ["python", "app.py"]
